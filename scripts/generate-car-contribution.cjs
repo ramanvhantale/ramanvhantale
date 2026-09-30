@@ -1,13 +1,22 @@
-const fs = require("fs");
+import json
+import os
+import urllib.request
+from pathlib import Path
 
-const username = process.env.GITHUB_USERNAME || "ramanvhantale";
-const token = process.env.GITHUB_TOKEN;
+from PIL import Image, ImageDraw, ImageFilter
 
-if (!token) {
-  throw new Error("GITHUB_TOKEN is missing.");
-}
 
-const query = `
+USERNAME = os.getenv("GITHUB_USERNAME", "ramanvhantale")
+TOKEN = os.getenv("GITHUB_TOKEN")
+
+OUTPUT = Path("profile/contribution-car.gif")
+
+
+# ---------------------------------------------------------
+# GITHUB CONTRIBUTION DATA
+# ---------------------------------------------------------
+
+QUERY = """
 query($login: String!) {
   user(login: $login) {
     contributionsCollection {
@@ -17,296 +26,809 @@ query($login: String!) {
           contributionDays {
             date
             contributionCount
-            color
           }
         }
       }
     }
   }
 }
-`;
+"""
 
-async function getContributions() {
-  const response = await fetch("https://api.github.com/graphql", {
-    method: "POST",
-    headers: {
-      Authorization: `bearer ${token}`,
-      "Content-Type": "application/json",
-      "User-Agent": "ramanvhantale-contribution-car"
-    },
-    body: JSON.stringify({
-      query,
-      variables: { login: username }
-    })
-  });
 
-  const data = await response.json();
+def get_contribution_data():
 
-  if (data.errors) {
-    throw new Error(JSON.stringify(data.errors, null, 2));
-  }
+    if not TOKEN:
+        raise RuntimeError("GITHUB_TOKEN is missing.")
 
-  return data.data.user.contributionsCollection.contributionCalendar;
-}
+    body = json.dumps({
+        "query": QUERY,
+        "variables": {
+            "login": USERNAME
+        }
+    }).encode("utf-8")
 
-function escapeXml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+    request = urllib.request.Request(
+        "https://api.github.com/graphql",
+        data=body,
+        headers={
+            "Authorization": f"bearer {TOKEN}",
+            "Content-Type": "application/json",
+            "User-Agent": "ramanvhantale-f1-contribution-race"
+        },
+        method="POST"
+    )
 
-function createCar(x, y) {
-  return `
-    <g transform="translate(${x},${y})">
-      
-      <!-- speed lines -->
-      <g opacity="0.75">
-        <path d="M-28 20 H-8" stroke="#58a6ff" stroke-width="3"
-          stroke-linecap="round">
-          <animate attributeName="x1"
-            values="-28;-45;-28"
-            dur="0.35s"
-            repeatCount="indefinite"/>
-          <animate attributeName="x2"
-            values="-8;-25;-8"
-            dur="0.35s"
-            repeatCount="indefinite"/>
-        </path>
+    with urllib.request.urlopen(request, timeout=30) as response:
+        data = json.load(response)
 
-        <path d="M-25 28 H-5" stroke="#79c0ff" stroke-width="2"
-          stroke-linecap="round">
-          <animate attributeName="x1"
-            values="-25;-40;-25"
-            dur="0.28s"
-            repeatCount="indefinite"/>
-          <animate attributeName="x2"
-            values="-5;-20;-5"
-            dur="0.28s"
-            repeatCount="indefinite"/>
-        </path>
-      </g>
+    if data.get("errors"):
+        raise RuntimeError(
+            json.dumps(data["errors"], indent=2)
+        )
 
-      <!-- exhaust -->
-      <circle cx="-18" cy="27" r="3" fill="#ff7b72" opacity="0.8">
-        <animate attributeName="r"
-          values="2;5;2"
-          dur="0.35s"
-          repeatCount="indefinite"/>
-        <animate attributeName="opacity"
-          values="0.8;0;0.8"
-          dur="0.35s"
-          repeatCount="indefinite"/>
-      </circle>
+    return data["data"]["user"]["contributionsCollection"]["contributionCalendar"]
 
-      <!-- car body -->
-      <path
-        d="M-18 18
-           L-8 18
-           L-1 10
-           L15 10
-           L23 18
-           L30 18
-           L34 27
-           L32 32
-           L-22 32
-           L-24 27
-           Z"
-        fill="#1f6feb"
-        stroke="#ffffff"
-        stroke-width="1.5"
-      />
 
-      <!-- roof -->
-      <path
-        d="M-4 18 L2 11 L14 11 L20 18 Z"
-        fill="#58a6ff"
-        stroke="#ffffff"
-        stroke-width="1"
-      />
+# ---------------------------------------------------------
+# COLORS
+# ---------------------------------------------------------
 
-      <!-- windows -->
-      <path
-        d="M1 17 L5 13 L10 13 L10 17 Z"
-        fill="#0d1117"
-      />
+BACKGROUND = "#070b0f"
+PANEL = "#0b1117"
 
-      <path
-        d="M12 13 L15 13 L19 17 L12 17 Z"
-        fill="#0d1117"
-      />
+GREEN_0 = "#161b22"
+GREEN_1 = "#0e4429"
+GREEN_2 = "#006d32"
+GREEN_3 = "#26a641"
+GREEN_4 = "#39d353"
 
-      <!-- headlights -->
-      <circle cx="29" cy="22" r="2.5" fill="#f8e45c">
-        <animate attributeName="opacity"
-          values="0.4;1;0.4"
-          dur="0.5s"
-          repeatCount="indefinite"/>
-      </circle>
+GRID = "#21262d"
 
-      <!-- wheels -->
-      <circle cx="-10" cy="32" r="7" fill="#161b22" stroke="#ffffff" stroke-width="1.5"/>
-      <circle cx="23" cy="32" r="7" fill="#161b22" stroke="#ffffff" stroke-width="1.5"/>
+WHITE = "#f0f6fc"
+GRAY = "#8b949e"
 
-      <circle cx="-10" cy="32" r="2.5" fill="#8b949e"/>
-      <circle cx="23" cy="32" r="2.5" fill="#8b949e"/>
+RED = "#e10600"
+DARK_RED = "#8b0000"
 
-      <!-- wheel rotation -->
-      <g>
-        <animateTransform
-          attributeName="transform"
-          type="rotate"
-          from="0 -10 32"
-          to="360 -10 32"
-          dur="0.25s"
-          repeatCount="indefinite"/>
-      </g>
-    </g>
-  `;
-}
+BLUE = "#071d49"
+LIGHT_BLUE = "#1f6feb"
 
-function generateSvg(calendar) {
-  const cell = 13;
-  const gap = 3;
-  const step = cell + gap;
+YELLOW = "#f2d14b"
 
-  const cols = calendar.weeks.length;
-  const rows = 7;
+BLACK = "#050505"
 
-  const graphWidth = cols * step;
-  const width = Math.max(1000, graphWidth + 80);
-  const height = 230;
 
-  const startX = (width - graphWidth) / 2;
-  const startY = 55;
+# ---------------------------------------------------------
+# CONTRIBUTION LEVEL
+# ---------------------------------------------------------
 
-  let cells = "";
+def contribution_level(count, maximum):
 
-  calendar.weeks.forEach((week, weekIndex) => {
-    week.contributionDays.forEach((day) => {
-      const date = new Date(day.date + "T00:00:00Z");
-      const row = date.getUTCDay();
+    if count <= 0:
+        return 0
 
-      const x = startX + weekIndex * step;
-      const y = startY + row * step;
+    ratio = count / max(1, maximum)
 
-      const color = day.color || "#161b22";
+    if ratio < 0.20:
+        return 1
 
-      cells += `
-        <rect
-          x="${x}"
-          y="${y}"
-          width="${cell}"
-          height="${cell}"
-          rx="3"
-          fill="${escapeXml(color)}">
-          <title>${escapeXml(day.date)} — ${day.contributionCount} contributions</title>
-        </rect>
-      `;
-    });
-  });
+    if ratio < 0.40:
+        return 2
 
-  const carStart = startX - 60;
-  const carEnd = startX + graphWidth + 25;
+    if ratio < 0.70:
+        return 3
 
-  return `
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  width="${width}"
-  height="${height}"
-  viewBox="0 0 ${width} ${height}"
-  role="img"
-  aria-label="Raman's GitHub contribution graph with an animated racing car">
+    return 4
 
-  <rect
-    width="100%"
-    height="100%"
-    rx="14"
-    fill="#0d1117"/>
 
-  <text
-    x="${width / 2}"
-    y="28"
-    text-anchor="middle"
-    fill="#58a6ff"
-    font-family="Arial, sans-serif"
-    font-size="18"
-    font-weight="700">
-    🏎️ CONTRIBUTION RACE
-  </text>
+# ---------------------------------------------------------
+# ROUNDED RECTANGLE
+# ---------------------------------------------------------
 
-  <!-- contribution cells -->
-  <g>
-    ${cells}
-  </g>
+def rounded(draw, box, radius, fill, outline=None, width=1):
 
-  <!-- racing lane -->
-  <line
-    x1="${startX - 10}"
-    y1="${startY + 3 * step + 7}"
-    x2="${startX + graphWidth + 10}"
-    y2="${startY + 3 * step + 7}"
-    stroke="#30363d"
-    stroke-width="2"
-    stroke-dasharray="8 8"
-    opacity="0.8"/>
+    draw.rounded_rectangle(
+        box,
+        radius=radius,
+        fill=fill,
+        outline=outline,
+        width=width
+    )
 
-  <!-- animated car -->
-  <g>
-    ${createCar(carStart, startY + 3 * step - 15)}
 
-    <animateTransform
-      attributeName="transform"
-      type="translate"
-      values="0 0; ${carEnd - carStart} 0"
-      dur="3.2s"
-      repeatCount="indefinite"
-      calcMode="spline"
-      keySplines="0.2 0 0.8 1"
-      keyTimes="0;1"/>
-  </g>
+# ---------------------------------------------------------
+# F1 CAR
+# ---------------------------------------------------------
 
-  <!-- finish line -->
-  <g transform="translate(${startX + graphWidth + 18},${startY + 3 * step - 8})">
-    <rect width="5" height="45" fill="#f0f6fc"/>
-    <rect x="5" y="0" width="8" height="8" fill="#f0f6fc"/>
-    <rect x="13" y="0" width="8" height="8" fill="#f85149"/>
-    <rect x="5" y="8" width="8" height="8" fill="#f85149"/>
-    <rect x="13" y="8" width="8" height="8" fill="#f0f6fc"/>
-  </g>
+def draw_f1_car(image, x, y, scale=1.0):
 
-  <text
-    x="${width / 2}"
-    y="${height - 14}"
-    text-anchor="middle"
-    fill="#8b949e"
-    font-family="Arial, sans-serif"
-    font-size="11">
-    ${calendar.totalContributions} contributions in the last year • Keep coding 🚀
-  </text>
+    layer = Image.new(
+        "RGBA",
+        image.size,
+        (0, 0, 0, 0)
+    )
 
-</svg>
-`;
-}
+    draw = ImageDraw.Draw(layer)
 
-async function main() {
-  const calendar = await getContributions();
+    s = scale
 
-  const svg = generateSvg(calendar);
+    def p(points):
 
-  fs.mkdirSync("profile", { recursive: true });
+        return [
+            (
+                int(x + px * s),
+                int(y + py * s)
+            )
+            for px, py in points
+        ]
 
-  fs.writeFileSync(
-    "profile/contribution-car.svg",
-    svg,
-    "utf8"
-  );
+    # -----------------------------------------------------
+    # SPEED LINES
+    # -----------------------------------------------------
 
-  console.log("Generated profile/contribution-car.svg");
-}
+    draw.line(
+        p([(-120, 5), (-40, 5)]),
+        fill=(255, 255, 255, 70),
+        width=max(2, int(3 * s))
+    )
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+    draw.line(
+        p([(-105, 16), (-35, 16)]),
+        fill=(88, 166, 255, 90),
+        width=max(2, int(3 * s))
+    )
+
+    draw.line(
+        p([(-90, 28), (-25, 28)]),
+        fill=(255, 255, 255, 45),
+        width=max(1, int(2 * s))
+    )
+
+    # -----------------------------------------------------
+    # REAR WING
+    # -----------------------------------------------------
+
+    draw.rectangle(
+        [
+            x - 60 * s,
+            y - 14 * s,
+            x - 20 * s,
+            y - 8 * s
+        ],
+        fill=DARK_RED
+    )
+
+    draw.rectangle(
+        [
+            x - 55 * s,
+            y - 20 * s,
+            x - 25 * s,
+            y - 15 * s
+        ],
+        fill=BLUE
+    )
+
+    # Rear wing supports
+
+    draw.line(
+        p([(-50, -14), (-50, -2)]),
+        fill=WHITE,
+        width=max(1, int(2 * s))
+    )
+
+    draw.line(
+        p([(-28, -14), (-28, -2)]),
+        fill=WHITE,
+        width=max(1, int(2 * s))
+    )
+
+    # -----------------------------------------------------
+    # MAIN BODY
+    # -----------------------------------------------------
+
+    body = [
+        (-52, 8),
+        (-38, 2),
+        (-22, -5),
+        (-8, -9),
+        (12, -9),
+        (30, -5),
+        (45, 2),
+        (60, 7),
+        (66, 13),
+        (60, 18),
+        (35, 19),
+        (20, 15),
+        (-15, 16),
+        (-36, 19),
+        (-53, 15)
+    ]
+
+    draw.polygon(
+        p(body),
+        fill=BLUE,
+        outline=WHITE
+    )
+
+    # -----------------------------------------------------
+    # RED BODY PANELS
+    # -----------------------------------------------------
+
+    draw.polygon(
+        p([
+            (-51, 8),
+            (-33, 3),
+            (-16, 0),
+            (-2, 0),
+            (-12, 7),
+            (-30, 13),
+            (-51, 13)
+        ]),
+        fill=RED
+    )
+
+    draw.polygon(
+        p([
+            (18, -8),
+            (31, -5),
+            (44, 1),
+            (31, 5),
+            (17, 2)
+        ]),
+        fill=RED
+    )
+
+    # -----------------------------------------------------
+    # YELLOW STRIPES
+    # -----------------------------------------------------
+
+    draw.line(
+        p([
+            (-45, 5),
+            (-20, 1),
+            (2, -1),
+            (24, 0),
+            (44, 5)
+        ]),
+        fill=YELLOW,
+        width=max(2, int(3 * s))
+    )
+
+    draw.line(
+        p([
+            (-27, 11),
+            (22, 10),
+            (50, 9)
+        ]),
+        fill=YELLOW,
+        width=max(1, int(2 * s))
+    )
+
+    # -----------------------------------------------------
+    # FRONT NOSE
+    # -----------------------------------------------------
+
+    draw.polygon(
+        p([
+            (25, 1),
+            (62, 7),
+            (82, 11),
+            (48, 12)
+        ]),
+        fill=LIGHT_BLUE
+    )
+
+    # -----------------------------------------------------
+    # FRONT WING
+    # -----------------------------------------------------
+
+    draw.polygon(
+        p([
+            (48, 8),
+            (78, 9),
+            (91, 13),
+            (85, 16),
+            (47, 14)
+        ]),
+        fill=RED,
+        outline=WHITE
+    )
+
+    draw.line(
+        p([
+            (56, 15),
+            (92, 17)
+        ]),
+        fill=WHITE,
+        width=max(1, int(1 * s))
+    )
+
+    draw.line(
+        p([
+            (61, 11),
+            (90, 13)
+        ]),
+        fill=YELLOW,
+        width=max(1, int(2 * s))
+    )
+
+    # -----------------------------------------------------
+    # COCKPIT
+    # -----------------------------------------------------
+
+    draw.ellipse(
+        [
+            x - 3 * s,
+            y - 13 * s,
+            x + 23 * s,
+            y + 2 * s
+        ],
+        fill=BLACK,
+        outline=WHITE
+    )
+
+    # -----------------------------------------------------
+    # HALO
+    # -----------------------------------------------------
+
+    draw.arc(
+        [
+            x - 8 * s,
+            y - 18 * s,
+            x + 29 * s,
+            y + 10 * s
+        ],
+        start=190,
+        end=350,
+        fill=WHITE,
+        width=max(1, int(2 * s))
+    )
+
+    draw.line(
+        p([
+            (10, -16),
+            (10, 1)
+        ]),
+        fill=WHITE,
+        width=max(1, int(2 * s))
+    )
+
+    # -----------------------------------------------------
+    # DRIVER HELMET
+    # -----------------------------------------------------
+
+    draw.ellipse(
+        [
+            x + 3 * s,
+            y - 11 * s,
+            x + 14 * s,
+            y
+        ],
+        fill=YELLOW,
+        outline=DARK_RED
+    )
+
+    # -----------------------------------------------------
+    # WHEELS
+    # -----------------------------------------------------
+
+    wheels = [
+        (-27, 18),
+        (43, 17)
+    ]
+
+    for wx, wy in wheels:
+
+        radius = 11 * s
+
+        draw.ellipse(
+            [
+                x + wx * s - radius,
+                y + wy * s - radius,
+                x + wx * s + radius,
+                y + wy * s + radius
+            ],
+            fill=BLACK,
+            outline=WHITE
+        )
+
+        draw.ellipse(
+            [
+                x + (wx - 4) * s,
+                y + (wy - 4) * s,
+                x + (wx + 4) * s,
+                y + (wy + 4) * s
+            ],
+            fill="#6e7681"
+        )
+
+        draw.ellipse(
+            [
+                x + (wx - 1.5) * s,
+                y + (wy - 1.5) * s,
+                x + (wx + 1.5) * s,
+                y + (wy + 1.5) * s
+            ],
+            fill="#111827"
+        )
+
+    # -----------------------------------------------------
+    # EXHAUST GLOW
+    # -----------------------------------------------------
+
+    glow = Image.new(
+        "RGBA",
+        image.size,
+        (0, 0, 0, 0)
+    )
+
+    glow_draw = ImageDraw.Draw(glow)
+
+    glow_draw.ellipse(
+        [
+            x - 88 * s,
+            y + 1 * s,
+            x - 45 * s,
+            y + 19 * s
+        ],
+        fill=(255, 70, 0, 160)
+    )
+
+    glow = glow.filter(
+        ImageFilter.GaussianBlur(
+            max(2, int(6 * s))
+        )
+    )
+
+    layer.alpha_composite(glow)
+
+    # -----------------------------------------------------
+    # SPARKS
+    # -----------------------------------------------------
+
+    sparks = [
+        (-58, 25, 2),
+        (-43, 30, 1),
+        (-70, 23, 1),
+        (67, 24, 1)
+    ]
+
+    for sx, sy, radius in sparks:
+
+        draw.ellipse(
+            [
+                x + (sx - radius) * s,
+                y + (sy - radius) * s,
+                x + (sx + radius) * s,
+                y + (sy + radius) * s
+            ],
+            fill=YELLOW
+        )
+
+    image.alpha_composite(layer)
+
+
+# ---------------------------------------------------------
+# DRAW CONTRIBUTION GRAPH
+# ---------------------------------------------------------
+
+def draw_contribution_graph(
+    draw,
+    calendar,
+    width,
+    height
+):
+
+    weeks = calendar["weeks"]
+
+    all_days = []
+
+    for week in weeks:
+        for day in week["contributionDays"]:
+            all_days.append(day)
+
+    maximum = max(
+        [
+            day["contributionCount"]
+            for day in all_days
+        ],
+        default=1
+    )
+
+    cell = 12
+    gap = 4
+    step = cell + gap
+
+    graph_width = min(
+        53 * step,
+        width - 100
+    )
+
+    start_x = (width - graph_width) // 2
+
+    start_y = 142
+
+    import datetime
+
+    for week_index, week in enumerate(weeks[:53]):
+
+        for day in week["contributionDays"]:
+
+            date = datetime.date.fromisoformat(
+                day["date"]
+            )
+
+            row = (date.weekday() + 1) % 7
+
+            x = start_x + week_index * step
+
+            y = start_y + row * step
+
+            level = contribution_level(
+                day["contributionCount"],
+                maximum
+            )
+
+            colors = [
+                GREEN_0,
+                GREEN_1,
+                GREEN_2,
+                GREEN_3,
+                GREEN_4
+            ]
+
+            color = colors[level]
+
+            rounded(
+                draw,
+                (
+                    x,
+                    y,
+                    x + cell,
+                    y + cell
+                ),
+                3,
+                color
+            )
+
+
+# ---------------------------------------------------------
+# CREATE FRAME
+# ---------------------------------------------------------
+
+def create_frame(
+    calendar,
+    frame_number,
+    total_frames
+):
+
+    WIDTH = 1200
+    HEIGHT = 330
+
+    image = Image.new(
+        "RGBA",
+        (WIDTH, HEIGHT),
+        BACKGROUND
+    )
+
+    draw = ImageDraw.Draw(image)
+
+    # -----------------------------------------------------
+    # TITLE
+    # -----------------------------------------------------
+
+    draw.text(
+        (WIDTH // 2, 24),
+        "CONTRIBUTION GRAND PRIX",
+        fill=WHITE,
+        anchor="ma"
+    )
+
+    draw.text(
+        (WIDTH // 2, 48),
+        "RAMAN VHANTALE  •  GITHUB ACTIVITY CIRCUIT",
+        fill=GRAY,
+        anchor="ma"
+    )
+
+    # -----------------------------------------------------
+    # TRACK PANEL
+    # -----------------------------------------------------
+
+    rounded(
+        draw,
+        (
+            25,
+            75,
+            WIDTH - 25,
+            HEIGHT - 30
+        ),
+        18,
+        PANEL,
+        GRID,
+        2
+    )
+
+    # -----------------------------------------------------
+    # TRACK LINE
+    # -----------------------------------------------------
+
+    track_y = 205
+
+    draw.line(
+        (
+            45,
+            track_y,
+            WIDTH - 45,
+            track_y
+        ),
+        fill="#30363d",
+        width=2
+    )
+
+    # -----------------------------------------------------
+    # CONTRIBUTION GRID
+    # -----------------------------------------------------
+
+    draw_contribution_graph(
+        draw,
+        calendar,
+        WIDTH,
+        HEIGHT
+    )
+
+    # -----------------------------------------------------
+    # START FINISH FLAG
+    # -----------------------------------------------------
+
+    flag_x = 50
+    flag_y = 285
+
+    for i in range(6):
+
+        color = (
+            WHITE
+            if i % 2 == 0
+            else RED
+        )
+
+        draw.rectangle(
+            (
+                flag_x + i * 9,
+                flag_y,
+                flag_x + (i + 1) * 9,
+                flag_y + 9
+            ),
+            fill=color
+        )
+
+        draw.rectangle(
+            (
+                flag_x + i * 9,
+                flag_y + 9,
+                flag_x + (i + 1) * 9,
+                flag_y + 18
+            ),
+            fill=(
+                RED
+                if i % 2 == 0
+                else WHITE
+            )
+        )
+
+    # -----------------------------------------------------
+    # CAR POSITION
+    # -----------------------------------------------------
+
+    start_x = 150
+    end_x = WIDTH - 160
+
+    progress = frame_number / (
+        total_frames - 1
+    )
+
+    # Smooth acceleration
+    smooth = progress * progress * (
+        3 - 2 * progress
+    )
+
+    car_x = (
+        start_x
+        + (end_x - start_x) * smooth
+    )
+
+    car_y = 205
+
+    # -----------------------------------------------------
+    # MOTION TRAILS
+    # -----------------------------------------------------
+
+    for offset in [70, 45, 25]:
+
+        draw_f1_car(
+            image,
+            car_x - offset,
+            car_y,
+            1.0
+        )
+
+    # Main car
+
+    draw_f1_car(
+        image,
+        car_x,
+        car_y,
+        1.0
+    )
+
+    # -----------------------------------------------------
+    # FOOTER
+    # -----------------------------------------------------
+
+    total = calendar["totalContributions"]
+
+    draw.text(
+        (
+            WIDTH // 2,
+            HEIGHT - 12
+        ),
+        f"{total:,} contributions  •  DARK GREEN CIRCUIT  •  KEEP CODING",
+        fill=GRAY,
+        anchor="ms"
+    )
+
+    return image.convert(
+        "P",
+        palette=Image.Palette.ADAPTIVE
+    )
+
+
+# ---------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------
+
+def main():
+
+    calendar = get_contribution_data()
+
+    OUTPUT.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    total_frames = 40
+
+    frames = []
+
+    for frame in range(total_frames):
+
+        print(
+            f"Generating frame "
+            f"{frame + 1}/{total_frames}"
+        )
+
+        frames.append(
+            create_frame(
+                calendar,
+                frame,
+                total_frames
+            )
+        )
+
+    frames[0].save(
+        OUTPUT,
+        save_all=True,
+        append_images=frames[1:],
+        duration=70,
+        loop=0,
+        optimize=True,
+        disposal=2
+    )
+
+    print(
+        f"\nGenerated: {OUTPUT}"
+    )
+
+
+if __name__ == "__main__":
+    main()
