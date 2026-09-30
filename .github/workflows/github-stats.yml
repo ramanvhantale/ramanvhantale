@@ -28,7 +28,7 @@ jobs:
         uses: stats-organization/github-readme-stats-action@v2
         with:
           card: top-langs
-          options: username=ramanvhantale&layout=compact&langs_count=8&hide_border=true&theme=tokyonight
+          options: username=ramanvhantale&layout=normal&langs_count=8&hide_border=true&theme=tokyonight
           path: profile/top-langs.svg
           token: ${{ secrets.GITHUB_TOKEN }}
 
