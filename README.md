@@ -321,8 +321,12 @@ Software Development
 <img src="https://img.shields.io/badge/LinkedIn-Raman%20Vhantale-0A66C2?style=for-the-badge&logo=linkedin" />
 </a>
 
-<a href="mailto:raman.vhantale24@vit.edu">
-<img src="https://img.shields.io/badge/Email-Contact%20Me-D14836?style=for-the-badge&logo=gmail&logoColor=white" />
+<a>
+  <img src="https://img.shields.io/badge/✉%20raman.vhantale24%40vit.edu-555555?style=for-the-badge" />
+</a>
+
+<a>
+  <img src="https://img.shields.io/badge/CONTACT%20ME-c65342?style=for-the-badge" />
 </a>
 
 </div>
