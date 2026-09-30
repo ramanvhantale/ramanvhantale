@@ -297,14 +297,15 @@ Software Development
 
 # 🌱 Current Focus
 
-```text
-🤖 Artificial Intelligence
-👁️ Computer Vision
-⚙️ Backend Engineering
-🌐 Full-Stack Development
-🔌 IoT Systems
-🧠 Data Structures & Algorithms
-```
+<div align="center">
+
+<img
+  src="./assets/current-focus.png"
+  width="100%"
+  alt="Raman's Current Focus"
+/>
+
+</div>
 
 ---
 
