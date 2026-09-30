@@ -322,7 +322,7 @@ Software Development
 </a>
 
 <a>
-  <img src="https://img.shields.io/badge/raman.vhantale24%40vit.edu-555555?style=flat-square">
+  <img src="https://img.shields.io/badge/ramanvhantale%40gmail.com-555555?style=flat-square">
 </a>
 
 <a>
