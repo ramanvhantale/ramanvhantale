@@ -258,13 +258,26 @@ Software Development
 
 
 # 📈 Contribution Activity
+
 <div align="center">
 
-<img
-  src="./profile/contribution-car.svg"
-  width="100%"
-  alt="Raman's animated contribution race"
-/>
+<picture>
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset="https://raw.githubusercontent.com/ramanvhantale/ramanvhantale/output/pacman-contribution-graph-dark.svg"
+  />
+
+  <source
+    media="(prefers-color-scheme: light)"
+    srcset="https://raw.githubusercontent.com/ramanvhantale/ramanvhantale/output/pacman-contribution-graph.svg"
+  />
+
+  <img
+    src="https://raw.githubusercontent.com/ramanvhantale/ramanvhantale/output/pacman-contribution-graph-dark.svg"
+    width="100%"
+    alt="Raman's Pac-Man GitHub contribution game"
+  />
+</picture>
 
 </div>
 
