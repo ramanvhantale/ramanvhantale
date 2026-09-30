@@ -239,9 +239,9 @@ Software Development
 
 <div align="center">
 
-<img src="./profile/stats.svg" height="180" alt="Raman's GitHub Stats"/>
+<img src="./profile/stats.svg" width="49%" alt="Raman's GitHub Stats"/>
 
-<img src="./profile/top-langs.svg" height="180" alt="Raman's Top Languages"/>
+<img src="./profile/top-langs.svg" width="49%" alt="Raman's Top Languages"/>
 
 </div>
 
