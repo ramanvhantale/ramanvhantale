@@ -300,7 +300,7 @@ Software Development
 <div align="center">
 
 <img
-  src="./assets/current-focus.png"
+  src="./focus.png"
   width="100%"
   alt="Raman's Current Focus"
 />
