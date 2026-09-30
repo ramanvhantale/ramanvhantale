@@ -258,11 +258,13 @@ Software Development
 
 
 
-# 📈 Contribution Activity
-
 <div align="center">
 
-<img src="https://github-readme-activity-graph.vercel.app/graph?username=ramanvhantale&bg_color=0D1117&color=36BCF7&line=36BCF7&point=FFFFFF&area=true&hide_border=true" width="95%"/>
+<img
+  src="./profile/contribution-car.svg"
+  width="100%"
+  alt="Raman's animated contribution race"
+/>
 
 </div>
 
