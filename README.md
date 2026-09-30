@@ -211,13 +211,7 @@ I enjoy working across the complete development cycle — from building ML model
 </tbody>
 </table>
 
-<div align="center">
 
-<a href="https://github.com/ramanvhantale/FreshAI"><img src="https://github-readme-stats.vercel.app/api/pin/?username=ramanvhantale&repo=FreshAI&theme=tokyonight&hide_border=true" alt="FreshAI" /></a>
-<a href="https://github.com/ramanvhantale/senate-nav-spark"><img src="https://github-readme-stats.vercel.app/api/pin/?username=ramanvhantale&repo=senate-nav-spark&theme=tokyonight&hide_border=true" alt="senate-nav-spark" /></a>
-<a href="https://github.com/ramanvhantale/html-portfolio"><img src="https://github-readme-stats.vercel.app/api/pin/?username=ramanvhantale&repo=html-portfolio&theme=tokyonight&hide_border=true" alt="html-portfolio" /></a>
-
-</div>
 
 ---
 
@@ -244,6 +238,7 @@ Software Development
 <img src="./profile/top-langs.svg" width="49%" alt="Raman's Top Languages"/>
 
 </div>
+
 ---
 
 # 🔥 Contribution Streak
